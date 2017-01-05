@@ -120,13 +120,12 @@ Grid.prototype.populate = function(map) {
 
 Grid.prototype.draw = function() {
     var gameContainer = getElementByClass("game");
-    var canvas = document.querySelector("canvas");
-    var ctx = canvas.getContext("2d");
+    var ctx = canvasCells.getContext("2d");
 
-    var cellWidth = canvas.width / this.width;
-    var cellHeight = canvas.height / this.height;
+    this.cellWidth = canvasCells.width / this.width;
+    this.cellHeight = canvasCells.height / this.height;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvasCells.width, canvasCells.height);
 
     for (var y = 0; y < this.height; y++) {
         for (var x = 0; x < this.width; x++) {
@@ -134,7 +133,8 @@ Grid.prototype.draw = function() {
             ctx.beginPath();
             ctx.fillStyle = color;
             ctx.strokeStyle = "gray";
-            ctx.rect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+            ctx.rect(x * this.cellWidth, y * this.cellHeight,
+                     this.cellWidth, this.cellHeight);
             ctx.fill();
             ctx.stroke();
         }
@@ -165,18 +165,62 @@ bigMap[24][26] = "o";
 bigMap[25][24] = "o";
 bigMap[26][25] = "o";
 
-var gridObject = new Grid(bigMap);
+var gridObject = new Grid(generateEmptyMap(25));
+var canvasCells = getElementByClass("canvas-cells");
+var canvasAdd = getElementByClass("canvas-add");
+var mode = "add";
 
 window.onload = function() {
     var gameContainer = getElementByClass("game");
-    var canvas = document.querySelector("canvas");
-    canvas.width = gameContainer.offsetWidth;
-    canvas.height = canvas.width;
+    canvasCells.width = canvasCells.height = gameContainer.offsetWidth;
+    canvasAdd.width = canvasAdd.height = canvasCells.width;
+
+    gameContainer.style.height = gameContainer.offsetWidth + "px";
     gridObject.draw();
 }
 
-var proceedButton = getElementByClass("button-proceed");
-proceedButton.addEventListener("click", function(event) {
+function drawAddBox(event) {
+    var canvasBox = canvasAdd.getBoundingClientRect();
+    ctx = canvasAdd.getContext("2d");
+    ctx.clearRect(0, 0, canvasAdd.width, canvasAdd.height);
+
+    var drawX = Math.floor((event.clientX - canvasBox.left) / gridObject.cellWidth) * gridObject.cellWidth;
+    var drawY = Math.floor((event.clientY - canvasBox.top) / gridObject.cellHeight) * gridObject.cellHeight;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+    ctx.fillRect(drawX, drawY, gridObject.cellWidth, gridObject.cellHeight);
+}
+
+var playButton = getElementByClass("button-play");
+playButton.addEventListener("click", function(event) {
+    if (mode == "evolve") {
+        mode = "add";
+        console.log(this);
+        this.innerHTML = "Play";
+        clearInterval(this.interval)
+        return;
+    }
+
     gridObject.update();
-    setInterval(function() {gridObject.update();}, 200);
+    this.interval = setInterval(function() {gridObject.update();}, 200);
+    this.innerHTML = "Stop";
+    mode = "evolve";
+});
+
+canvasAdd.addEventListener('contextmenu', function(evt) { 
+  evt.preventDefault();
+}, false);
+
+canvasAdd.addEventListener("mousedown", function(event) {
+    if (mode == "evolve") {
+        return;
+    }
+
+    var canvasBox = canvasAdd.getBoundingClientRect();
+    var gridX = Math.floor((event.clientX - canvasBox.left) / gridObject.cellWidth);
+    var gridY = Math.floor((event.clientY - canvasBox.top) / gridObject.cellHeight);
+
+    gridObject.map[gridY][gridX] = new Cell(event.which == 1, gridX, gridY, gridObject);
+    gridObject.draw();
+
+    event.preventDefault();
 });
