@@ -120,20 +120,23 @@ Grid.prototype.populate = function(map) {
 
 Grid.prototype.draw = function() {
     var gameContainer = getElementByClass("game");
-    var grid = getElementByClass("grid");
-    if (grid) {
-        gameContainer.removeChild(grid);
-    }
-    grid = gameContainer.appendChild(makeElement("div", {class: "container grid"}));
+    var canvas = document.querySelector("canvas");
+    var ctx = canvas.getContext("2d");
+
+    var cellWidth = canvas.width / this.width;
+    var cellHeight = canvas.height / this.height;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (var y = 0; y < this.height; y++) {
-        var row = grid.appendChild(makeElement("div", {class: "container grid-row"}))
         for (var x = 0; x < this.width; x++) {
-            var cellState = (this.map[y][x].alive) ?
-                            " grid-cell-alive" : " grid-cell-dead";
-            var cell = makeElement("div", {class: "grid-cell" + cellState});
-            cell.style.width = cell.style.paddingBottom = (100 / this.width) + "%";
-            row.appendChild(cell);
+            var color = this.map[y][x].alive ? "white" : "gray";
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.strokeStyle = "gray";
+            ctx.rect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+            ctx.fill();
+            ctx.stroke();
         }
     }
 }
@@ -155,7 +158,7 @@ Grid.prototype.update = function() {
     this.draw();
 }
 
-var bigMap = generateEmptyMap(80, 50);
+var bigMap = generateEmptyMap(50, 50);
 bigMap[25][25] = "o";
 bigMap[24][25] = "o";
 bigMap[24][26] = "o";
@@ -165,6 +168,10 @@ bigMap[26][25] = "o";
 var gridObject = new Grid(bigMap);
 
 window.onload = function() {
+    var gameContainer = getElementByClass("game");
+    var canvas = document.querySelector("canvas");
+    canvas.width = gameContainer.offsetWidth;
+    canvas.height = canvas.width;
     gridObject.draw();
 }
 
