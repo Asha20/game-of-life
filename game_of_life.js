@@ -1,16 +1,3 @@
-var emptyMap = [
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
-    [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "]
-]
-
 var testMap = [
     [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
     [" ", " ", " ", " ", " ", " ", " ", " ", " ", " "],
@@ -27,6 +14,18 @@ var testMap = [
 var symbolMap = {
     " ": false,
     "o": true
+}
+
+function generateEmptyMap(width, height) {
+    var result = [];
+    for (var y = 0; y < (height || width); y++) {
+        var row = [];
+        for (var x = 0; x < width; x++) {
+            row.push(" ");
+        }
+        result.push(row);
+    }
+    return result;
 }
 
 function makeElement(element, attributes) {
@@ -131,8 +130,10 @@ Grid.prototype.draw = function() {
         var row = grid.appendChild(makeElement("div", {class: "container grid-row"}))
         for (var x = 0; x < this.width; x++) {
             var cellState = (this.map[y][x].alive) ?
-                            " grid-cell-alive" : " grid-cell-dead"
-            row.appendChild(makeElement("div", {class: "grid-cell" + cellState}));
+                            " grid-cell-alive" : " grid-cell-dead";
+            var cell = makeElement("div", {class: "grid-cell" + cellState});
+            cell.style.width = cell.style.paddingBottom = (100 / this.width) + "%";
+            row.appendChild(cell);
         }
     }
 }
@@ -154,7 +155,14 @@ Grid.prototype.update = function() {
     this.draw();
 }
 
-var gridObject = new Grid(testMap);
+var bigMap = generateEmptyMap(80, 50);
+bigMap[25][25] = "o";
+bigMap[24][25] = "o";
+bigMap[24][26] = "o";
+bigMap[25][24] = "o";
+bigMap[26][25] = "o";
+
+var gridObject = new Grid(bigMap);
 
 window.onload = function() {
     gridObject.draw();
@@ -163,5 +171,5 @@ window.onload = function() {
 var proceedButton = getElementByClass("button-proceed");
 proceedButton.addEventListener("click", function(event) {
     gridObject.update();
-    setInterval(function() {gridObject.update();}, 500);
+    setInterval(function() {gridObject.update();}, 200);
 });
