@@ -98,6 +98,11 @@ Grid.prototype.cellAt = function(x, y) {
 Grid.prototype.validateLoadString = function(str) {
     var arr = str.split(",");
 
+    if (/^,+$/.test(str)) {
+        console.log("Has only commas");
+        return false;
+    }
+
     if (str == arr[0]) {
         console.log("No commas");
         return false;
