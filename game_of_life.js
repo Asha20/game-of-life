@@ -4,6 +4,9 @@ var symbolMap = {
 }
 
 function generateEmptyMap(width, height) {
+    width = width > maxSize ? maxSize : width;
+    height = height > maxSize ? maxSize : height;
+
     var result = "";
     for (var y = 0; y < (height || width); y++) {
         var row = "";
@@ -76,8 +79,8 @@ Cell.prototype.update = function() {
 }
 
 function Grid(map) {
-    this.width = map.indexOf(",") - 1;
-    this.height = (map.match(/,/g) || []).length;
+    this.width = map.indexOf(",");
+    this.height = map.match(/,/g).length + 1;
     this.map = this.loadMap(map);
 }
 
@@ -110,10 +113,12 @@ Grid.prototype.validateLoadString = function(str) {
 
 Grid.prototype.loadMap = function(map) {
     if (!this.validateLoadString(map)) {
-        console.log("Didn't load invalid string.");
-        return;
+        map = generateEmptyMap(this.width, this.height);
     }
     map = map.split(",");
+
+    this.width = map[0].length;
+    this.height = map.length;
 
     var result = [];
 
@@ -189,25 +194,23 @@ Grid.prototype.stringify = function() {
     return result.slice(0, result.length - 1);
 }
 
-var bigMap = generateEmptyMap(50, 50);
-bigMap[25][25] = "o";
-bigMap[24][25] = "o";
-bigMap[24][26] = "o";
-bigMap[25][24] = "o";
-bigMap[26][25] = "o";
-
 var gridObject = new Grid(generateEmptyMap(10));
 var canvasCells = getElementByClass("canvas-cells");
 var canvasAdd = getElementByClass("canvas-add");
-var playButton = getElementByClass("button-play");
+var advanceButton = getElementByClass("button-advance");
+var advanceOnceButton = getElementByClass("button-advance-once");
 var clearButton = getElementByClass("button-clear");
 var saveButton = getElementByClass("button-save");
 var loadButton = getElementByClass("button-load");
+var setSizeButton = getElementByClass("button-set-size");
+var currentWidth = getElementByClass("current-width");
+var currentHeight = getElementByClass("current-height");
 var mode = "add";
+var maxSize = 100;
 
 function setMode(newMode) {
     if (mode == "evolve") {
-        clearInterval(playButton.interval);
+        clearInterval(advanceButton.interval);
     }
 
     mode = newMode;
@@ -234,7 +237,7 @@ function drawAddBox(event) {
     ctx.fillRect(drawX, drawY, gridObject.cellWidth, gridObject.cellHeight);
 }
 
-playButton.addEventListener("click", function(event) {
+advanceButton.addEventListener("click", function(event) {
     if (mode == "evolve") {
         setMode("add");
         this.innerHTML = "Play";
@@ -247,12 +250,19 @@ playButton.addEventListener("click", function(event) {
     setMode("evolve");
 });
 
+advanceOnceButton.addEventListener("click", function(event) {
+    if (mode == "add") {
+        gridObject.update();
+    }
+});
+
 canvasAdd.addEventListener('contextmenu', function(evt) { 
   evt.preventDefault();
 }, false);
 
 canvasAdd.addEventListener("mousedown", function(event) {
     if (mode == "evolve") {
+        window.alert("Press Stop to be able to place again!");
         return;
     }
 
@@ -279,6 +289,24 @@ saveButton.addEventListener("click", function(event) {
 
 loadButton.addEventListener("click", function(event) {
     var textLoad = getElementByClass("text-load");
+    if (!textLoad.value) {
+        return;
+    }
+
     gridObject.map = gridObject.loadMap(textLoad.value);
     gridObject.draw();
 });
+
+setSizeButton.addEventListener("click", function(event) {
+    var width = getElementByClass("text-width").value;
+    var height = getElementByClass("text-height").value;
+    if (width <= 0 || height <= 0) {
+        window.alert("Invalid size!");
+        return;
+    }
+
+    gridObject = new Grid(generateEmptyMap(width, height));
+    gridObject.draw();
+    currentWidth.innerHTML = width;
+    currentHeight.innerHTML = height;
+})
