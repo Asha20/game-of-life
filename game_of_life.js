@@ -17,15 +17,16 @@ var symbolMap = {
 }
 
 function generateEmptyMap(width, height) {
-    var result = [];
+    var result = "";
     for (var y = 0; y < (height || width); y++) {
-        var row = [];
+        var row = "";
         for (var x = 0; x < width; x++) {
-            row.push(" ");
+            row += "x";
         }
-        result.push(row);
+        result += row + ",";
     }
-    return result;
+    // Removes the last ","
+    return result.slice(0, result.length - 1);
 }
 
 function makeElement(element, attributes) {
@@ -88,9 +89,9 @@ Cell.prototype.update = function() {
 }
 
 function Grid(map) {
-    this.width = map[0].length;
-    this.height = map.length;
-    this.map = this.populate(map);
+    this.width = map.indexOf(",") - 1;
+    this.height = (map.match(/,/g) || []).length;
+    this.map = this.loadMap(map);
 }
 
 Grid.prototype.withinBounds = function(x, y) {
@@ -104,13 +105,35 @@ Grid.prototype.cellAt = function(x, y) {
     return this.map[y][x];
 }
 
-Grid.prototype.populate = function(map) {
+Grid.prototype.validateLoadString = function(str) {
+    var arr = str.split(",");
+
+    if (str == arr[0]) {
+        console.log("No commas");
+        return false;
+    }
+
+    if (!/^[ox,]+$/.test(str)) {
+        console.log("Invalid characters");
+        return false;
+    }
+
+    return true;
+}
+
+Grid.prototype.loadMap = function(map) {
+    if (!this.validateLoadString(map)) {
+        console.log("Didn't load invalid string.");
+        return;
+    }
+    map = map.split(",");
+
     var result = [];
 
     for (var y = 0; y < this.height; y++) {
         var row = [];
         for (var x = 0; x < this.width; x++) {
-            var type = symbolMap[map[y][x]];
+            var type = symbolMap[map[y].charAt(x)];
             row.push(new Cell(type, x, y, this));
         }
         result.push(row);
@@ -158,6 +181,27 @@ Grid.prototype.update = function() {
     this.draw();
 }
 
+Grid.prototype.clear = function() {
+    for (var y = 0; y < this.height; y++) {
+        for (var x = 0; x < this.width; x++) {
+            this.map[y][x] = new Cell(false, x, y, this);
+        }
+    }
+}
+
+Grid.prototype.stringify = function() {
+    result = "";
+    for (var y = 0; y < this.height; y++) {
+        var row = "";
+        for (var x = 0; x < this.width; x++) {
+            var character = this.map[y][x].alive ? "o" : "x";
+            row += character;
+        }
+        result += row + ",";
+    }
+    return result.slice(0, result.length - 1);
+}
+
 var bigMap = generateEmptyMap(50, 50);
 bigMap[25][25] = "o";
 bigMap[24][25] = "o";
@@ -165,17 +209,30 @@ bigMap[24][26] = "o";
 bigMap[25][24] = "o";
 bigMap[26][25] = "o";
 
-var gridObject = new Grid(generateEmptyMap(25));
+var gridObject = new Grid(generateEmptyMap(10));
 var canvasCells = getElementByClass("canvas-cells");
 var canvasAdd = getElementByClass("canvas-add");
+var playButton = getElementByClass("button-play");
+var clearButton = getElementByClass("button-clear");
+var saveButton = getElementByClass("button-save");
+var loadButton = getElementByClass("button-load");
 var mode = "add";
+
+function setMode(newMode) {
+    if (mode == "evolve") {
+        clearInterval(playButton.interval);
+    }
+
+    mode = newMode;
+}
 
 window.onload = function() {
     var gameContainer = getElementByClass("game");
     canvasCells.width = canvasCells.height = gameContainer.offsetWidth;
     canvasAdd.width = canvasAdd.height = canvasCells.width;
-
     gameContainer.style.height = gameContainer.offsetWidth + "px";
+    gameContainer.style.width = canvasCells.width + "px";
+
     gridObject.draw();
 }
 
@@ -190,20 +247,17 @@ function drawAddBox(event) {
     ctx.fillRect(drawX, drawY, gridObject.cellWidth, gridObject.cellHeight);
 }
 
-var playButton = getElementByClass("button-play");
 playButton.addEventListener("click", function(event) {
     if (mode == "evolve") {
-        mode = "add";
-        console.log(this);
+        setMode("add");
         this.innerHTML = "Play";
-        clearInterval(this.interval)
         return;
     }
 
     gridObject.update();
     this.interval = setInterval(function() {gridObject.update();}, 200);
     this.innerHTML = "Stop";
-    mode = "evolve";
+    setMode("evolve");
 });
 
 canvasAdd.addEventListener('contextmenu', function(evt) { 
@@ -223,4 +277,21 @@ canvasAdd.addEventListener("mousedown", function(event) {
     gridObject.draw();
 
     event.preventDefault();
+});
+
+clearButton.addEventListener("click", function(event) {
+    setMode("add");
+    gridObject.clear();
+    gridObject.draw();
+});
+
+saveButton.addEventListener("click", function(event) {
+    var textSave = getElementByClass("text-save");
+    textSave.innerHTML = gridObject.stringify();
+})
+
+loadButton.addEventListener("click", function(event) {
+    var textLoad = getElementByClass("text-load");
+    gridObject.map = gridObject.loadMap(textLoad.value);
+    gridObject.draw();
 });

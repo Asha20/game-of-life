@@ -10,13 +10,35 @@
       <h1 class="title">The Game of Life</h1>
     </div>
 
+    <div class="presets">
+      <h1>Options</h1>
+      
+      <h2>Save</h2>
+      <div class="container container-button">
+        <textarea class="text-save"></textarea>
+        <button class="button-save">Save Map</button>
+      </div>
+      
+      <h2>Load</h2>
+      <div class="container container-button">
+        <textarea class="text-load"></textarea>
+        <button class="button-load">Load</button>
+      </div>
+      
+    </div>
+
     <div class="container game">
       <canvas class="canvas-add" onmousemove="drawAddBox(event)"></canvas>
       <canvas class="canvas-cells"></canvas>
     </div>
 
+    <div class="rules">
+      <h1>Rules</h1>
+    </div>
+
     <div class="container play">
       <button class="button-play" autofocus>Play</button>
+      <button class="button-clear">Clear</button>
     </div>
 
     <script src="game_of_life.js"></script>
